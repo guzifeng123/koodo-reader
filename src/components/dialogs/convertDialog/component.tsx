@@ -11,7 +11,6 @@ import {
   paraSpacingList,
   titleSizeList,
 } from "../../../constants/dropdownList";
-import toast from "react-hot-toast";
 import { getDefaultOcrEngine, getOcrLangList } from "../../../utils/common";
 
 class ConvertDialog extends React.Component<
@@ -167,13 +166,14 @@ class ConvertDialog extends React.Component<
                         : "textOcrLang",
                       ocrEngineList
                         .filter((item) => {
-                          if (
-                            !isElectron &&
-                            this.props.currentBook.description.indexOf(
-                              "scanned"
-                            ) !== -1
-                          ) {
-                            return item.value !== "system-ocr";
+                          if (!isElectron) {
+                            // Web/Capacitor: only on-device Tesseract works;
+                            // system-ocr is Electron IPC and paddle has no
+                            // vendored models, so hide both there.
+                            return (
+                              item.value !== "system-ocr" &&
+                              item.value !== "paddle"
+                            );
                           }
                           return true;
                         })
@@ -193,12 +193,11 @@ class ConvertDialog extends React.Component<
               >
                 {ocrEngineList
                   .filter((item) => {
-                    if (
-                      !isElectron &&
-                      this.props.currentBook.description.indexOf("scanned") !==
-                        -1
-                    ) {
-                      return item.value !== "system-ocr";
+                    if (!isElectron) {
+                      // Web/Capacitor: only on-device Tesseract works.
+                      return (
+                        item.value !== "system-ocr" && item.value !== "paddle"
+                      );
                     }
                     return true;
                   })
@@ -346,15 +345,7 @@ class ConvertDialog extends React.Component<
                   justifyContent: "space-between",
                 }}
               >
-                <Trans>
-                  {ConfigService.getReaderConfig(
-                    this.props.currentBook.description.indexOf("scanned") > -1
-                      ? "scannedOcrEngine"
-                      : "textOcrEngine"
-                  ) === "official-ai-ocr"
-                    ? "Set OCR mode"
-                    : "Set OCR language"}
-                </Trans>
+                <Trans>Set OCR language</Trans>
 
                 <select
                   name=""

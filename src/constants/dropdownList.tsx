@@ -347,12 +347,6 @@ export const ocrTesseractLangList = [
   { label: "English", value: "eng", lang: "en" },
   { label: "Japanese", value: "jpn", lang: "ja" },
   { label: "Korean", value: "kor", lang: "ko" },
-  { label: "French", value: "fra", lang: "fr" },
-  { label: "German", value: "deu", lang: "de" },
-  { label: "Spanish", value: "spa", lang: "es" },
-  { label: "Russian", value: "rus", lang: "ru" },
-  { label: "Italian", value: "ita", lang: "it" },
-  { label: "Portuguese", value: "por", lang: "pt" },
 ];
 export const getOcrPaddleLangList = () => [
   {
@@ -412,11 +406,6 @@ export const titleSizeList = [
 ];
 export const ocrEngineList = [
   { label: "Please select", value: "", lang: "" },
-  {
-    label: "Official AI OCR",
-    value: "official-ai-ocr",
-    lang: "general",
-  },
   {
     label: "System OCR",
     value: "system-ocr",
