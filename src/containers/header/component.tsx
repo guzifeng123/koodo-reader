@@ -249,17 +249,22 @@ class Header extends React.Component<HeaderProps, HeaderState> {
   ) {
     if (nextProps.isAuthed && nextProps.isAuthed !== this.props.isAuthed) {
       if (ConfigService.getReaderConfig("isAllowNotification") === "yes") {
-        getNotification().then((res) => {
-          if (
-            res.data &&
-            res.data.result === "ok" &&
-            res.data.unread &&
-            res.data.unread > 0
-          ) {
-            this.setState({ notificationCount: res.data.unread });
-            ConfigService.setReaderConfig("isAllowNotification", "no");
-          }
-        });
+        getNotification()
+          .then((res) => {
+            if (
+              res.data &&
+              res.data.result === "ok" &&
+              res.data.unread &&
+              res.data.unread > 0
+            ) {
+              this.setState({ notificationCount: res.data.unread });
+              ConfigService.setReaderConfig("isAllowNotification", "no");
+            }
+          })
+          .catch(() => {
+            // Offline / network-error on the notification endpoint must not
+            // surface as an unhandled rejection in the WebView.
+          });
       }
       if (ConfigService.getReaderConfig("isProUpgraded") !== "yes") {
         try {
