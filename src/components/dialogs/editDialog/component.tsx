@@ -86,12 +86,6 @@ class EditDialog extends React.Component<EditDialogProps, EditDialogState> {
   };
 
   handleAnalyzeTitle = async () => {
-    if (!this.props.isAuthed) {
-      toast(this.props.t("Please upgrade to Pro to use this feature"));
-      this.props.handleSetting(true);
-      this.props.handleSettingMode("account");
-      return;
-    }
     if (this.state.isAnalyzing) return;
     const title = trimSpecialCharacters(
       this.nameRef.current?.value || this.props.currentBook.name || ""
@@ -212,19 +206,10 @@ class EditDialog extends React.Component<EditDialogProps, EditDialogState> {
               opacity: 0.8,
             }}
             onClick={() => {
-              if (!this.props.isAuthed) {
-                toast(
-                  this.props.t("Please upgrade to Pro to use this feature")
-                );
-                this.props.handleSetting(true);
-                this.props.handleSettingMode("account");
-                return;
-              }
               this.setState({ isMetadataDialogOpen: true });
             }}
           >
             <Trans>Get metadata</Trans>
-            <span style={{ fontSize: "13px", color: "#f16464" }}> (Pro)</span>
           </div>
         </div>
 

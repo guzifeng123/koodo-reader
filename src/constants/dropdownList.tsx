@@ -416,7 +416,6 @@ export const ocrEngineList = [
     label: "Official AI OCR",
     value: "official-ai-ocr",
     lang: "general",
-    isPro: true,
   },
   {
     label: "System OCR",

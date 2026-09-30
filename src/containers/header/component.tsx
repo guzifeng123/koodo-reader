@@ -27,7 +27,6 @@ import BookUtil from "../../utils/file/bookUtil";
 import {
   checkBrokenDatabase,
   checkMissingBook,
-  generateSyncRecord,
   getBookPartialMd5,
   getTaskStats,
   getWebsiteUrl,
@@ -39,11 +38,9 @@ import {
   AUTO_IMPORT_FOLDERS_KEY,
 } from "../../utils/common";
 import { driveList } from "../../constants/driveList";
-import SupportDialog from "../../components/dialogs/supportDialog";
 import { LocalFileManager } from "../../utils/file/localFile";
 import packageJson from "../../../package.json";
-import { getTempToken, updateUserConfig } from "../../utils/request/user";
-import i18n from "../../i18n";
+import { updateUserConfig } from "../../utils/request/user";
 import { getNotification } from "../../utils/request/common";
 import TokenService from "../../utils/storage/tokenService";
 declare var window: any;
@@ -260,14 +257,6 @@ class Header extends React.Component<HeaderProps, HeaderState> {
             ConfigService.setReaderConfig("isAllowNotification", "no");
           }
         });
-      }
-      if (ConfigService.getReaderConfig("isProUpgraded") !== "yes") {
-        try {
-          ConfigService.setReaderConfig("isProUpgraded", "yes");
-          await generateSyncRecord();
-        } catch (error) {
-          console.error(error);
-        }
       }
       let userInfo = await this.props.handleFetchUserInfo();
       if (
@@ -662,48 +651,6 @@ class Header extends React.Component<HeaderProps, HeaderState> {
         className="header"
         style={this.props.isCollapsed ? { marginLeft: "40px" } : {}}
       >
-        {this.props.isAuthed && (
-          <div
-            className="header-chat-widget"
-            onClick={async () => {
-              this.setState({ notificationCount: 0 });
-              let deviceUuid = await TokenService.getFingerprint();
-              let url =
-                getWebsiteUrl() +
-                (ConfigService.getReaderConfig("lang").startsWith("zh")
-                  ? "/zh/faq"
-                  : "/en/faq") +
-                "?referer=app&version=" +
-                packageJson.version +
-                "&client=web&device=" +
-                deviceUuid;
-              if (isElectron) {
-                window.electronAPI?.invoke("new-chat", {
-                  url: url,
-                });
-              } else {
-                openInBrowser(url);
-              }
-            }}
-          >
-            <img
-              src={require("../../assets/images/chat-widget.png")}
-              alt="logo"
-              className="login-mobile-qr"
-              style={{
-                width: "100%",
-                height: "100%",
-              }}
-            />
-            {this.state.notificationCount > 0 && (
-              <div className="header-chat-widget-badge">
-                {this.state.notificationCount > 99
-                  ? "99+"
-                  : this.state.notificationCount}
-              </div>
-            )}
-          </div>
-        )}
         <div
           className="header-search-container"
           style={this.props.isCollapsed ? { width: "369px" } : {}}
@@ -772,21 +719,9 @@ class Header extends React.Component<HeaderProps, HeaderState> {
                 let userInfo = await this.props.handleFetchUserInfo();
                 await this.handleCloudSync(userInfo);
               } else {
-                if (
-                  ConfigService.getReaderConfig("isEnableKoReaderSync") !==
-                  "yes"
-                ) {
-                  toast(
-                    this.props.t("Please upgrade to Pro to use this feature")
-                  );
-                  this.props.handleSetting(true);
-                  this.props.handleSettingMode("account");
-                  this.setState({ isSync: false });
-                } else {
-                  this.setState({ isSync: true });
-                  await this.handleKOReaderSync();
-                  this.setState({ isSync: false });
-                }
+                this.setState({ isSync: true });
+                await this.handleKOReaderSync();
+                this.setState({ isSync: false });
               }
             }}
             style={{ marginTop: "2px" }}
@@ -807,95 +742,6 @@ class Header extends React.Component<HeaderProps, HeaderState> {
           </div>
         </div>
 
-        {this.props.isAuthed &&
-        this.props.userInfo &&
-        ((this.props.userInfo.type === "pro" &&
-          this.props.userInfo.valid_until <
-            new Date().getTime() / 1000 + 30 * 24 * 3600) ||
-          (this.props.userInfo.type === "trial" &&
-            this.props.userInfo.valid_until <
-              new Date().getTime() / 1000 + 3 * 24 * 3600)) ? (
-          <div className="header-report-container">
-            <span
-              data-tooltip-id="my-tooltip"
-              data-tooltip-content={i18n.t("Your trial will expire in", {
-                ttl: Math.ceil(
-                  (this.props.userInfo.valid_until -
-                    new Date().getTime() / 1000) /
-                    (24 * 3600)
-                ),
-              })}
-            >
-              <span
-                style={{ textDecoration: "underline" }}
-                onClick={async () => {
-                  let response = await getTempToken();
-                  if (response.code === 200) {
-                    let tempToken = response.data.access_token;
-                    let deviceUuid = await TokenService.getFingerprint();
-                    openInBrowser(
-                      getWebsiteUrl() +
-                        (ConfigService.getReaderConfig("lang").startsWith("zh")
-                          ? "/zh"
-                          : "/en") +
-                        "/pricing?temp_token=" +
-                        tempToken +
-                        "&device_uuid=" +
-                        deviceUuid
-                    );
-                  } else if (response.code === 401) {
-                    this.props.handleFetchAuthed();
-                  }
-                }}
-              >
-                <Trans>Renew Pro</Trans>
-              </span>
-            </span>
-          </div>
-        ) : null}
-        {this.props.isAuthed &&
-        this.props.userInfo &&
-        this.props.userInfo.type === "trial" &&
-        this.props.userInfo.valid_until >
-          new Date().getTime() / 1000 + 3 * 24 * 3600 ? (
-          <div className="header-report-container" style={{ right: "200px" }}>
-            <span
-              data-tooltip-id="my-tooltip"
-              data-tooltip-content={i18n.t("Your trial will expire in", {
-                ttl: Math.ceil(
-                  (this.props.userInfo.valid_until -
-                    new Date().getTime() / 1000) /
-                    (24 * 3600)
-                ),
-              })}
-            >
-              <span
-                style={{ textDecoration: "underline" }}
-                onClick={async () => {
-                  let response = await getTempToken();
-                  if (response.code === 200) {
-                    let tempToken = response.data.access_token;
-                    let deviceUuid = await TokenService.getFingerprint();
-                    openInBrowser(
-                      getWebsiteUrl() +
-                        (ConfigService.getReaderConfig("lang").startsWith("zh")
-                          ? "/zh"
-                          : "/en") +
-                        "/pricing?temp_token=" +
-                        tempToken +
-                        "&device_uuid=" +
-                        deviceUuid
-                    );
-                  } else if (response.code === 401) {
-                    this.props.handleFetchAuthed();
-                  }
-                }}
-              >
-                <Trans>In trial</Trans>
-              </span>
-            </span>
-          </div>
-        ) : null}
         {KookitConfig.CloudMode !== "production" ? (
           <div className="header-report-container" style={{ right: "300px" }}>
             <span
@@ -916,7 +762,6 @@ class Header extends React.Component<HeaderProps, HeaderState> {
             handleDrag: this.props.handleDrag,
           } as any)}
         />
-        <SupportDialog />
         <UpdateInfo />
       </div>
     );
