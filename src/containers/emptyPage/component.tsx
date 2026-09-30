@@ -64,6 +64,19 @@ class EmptyPage extends React.Component<EmptyPageProps, EmptyPageState> {
           </div>
 
           {renderEmptyList()}
+          {this.props.mode === "home" && (
+            <button
+              className="empty-add-book-button"
+              onClick={() => {
+                const input = document.getElementById("import-book-box");
+                if (input) {
+                  (input as HTMLElement).click();
+                }
+              }}
+            >
+              <Trans>Import</Trans>
+            </button>
+          )}
         </div>
       </>
     );

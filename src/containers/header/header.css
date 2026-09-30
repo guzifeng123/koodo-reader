@@ -87,6 +87,26 @@
   transform: scaleX(1);
 }
 @media screen and (max-width: 950px) {
+  .header-search-container {
+    left: 48px;
+    right: 150px;
+    margin-left: 0 !important;
+    width: auto !important;
+  }
+  .setting-icon-parrent {
+    margin-left: 0 !important;
+    left: auto;
+    right: 6px;
+    width: 136px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .setting-icon-container {
+    width: 42px;
+    height: 42px;
+    margin-left: 4px;
+  }
   .import-from-cloud {
     position: fixed;
     left: 15px;
@@ -96,9 +116,10 @@
   .import-from-local {
     position: fixed !important;
     left: 15px;
-    top: calc(100vh - 80px) !important;
-    width: 138px;
-    padding: 0px !important;
+    bottom: 16px;
+    top: auto !important;
+    width: 160px !important;
+    height: 44px;
   }
   .header-report-container {
     right: 15px !important;

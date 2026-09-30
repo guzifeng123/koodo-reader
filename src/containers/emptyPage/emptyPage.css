@@ -38,3 +38,38 @@
   line-height: 30px;
   opacity: 0.49;
 }
+.empty-add-book-button {
+  position: absolute;
+  left: 30px;
+  top: 200px;
+  height: 44px;
+  padding: 0 26px;
+  border: none;
+  border-radius: 22px;
+  background-color: #333333;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.empty-add-book-button:active {
+  opacity: 0.8;
+}
+@media screen and (max-width: 950px) {
+  .empty-page-info-sub {
+    width: auto;
+    max-width: 100%;
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .empty-page-info-main {
+    font-size: 22px;
+    line-height: 36px;
+  }
+  .empty-page-info-container {
+    top: 40px;
+  }
+  .empty-add-book-button {
+    top: 130px;
+  }
+}
