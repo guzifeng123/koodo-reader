@@ -42,7 +42,7 @@ import { ConfigService } from "../../assets/lib/kookit-extra-browser.min";
 import * as Kookit from "../../assets/lib/kookit.min";
 import PopupRefer from "../../components/popups/popupRefer";
 import DatabaseService from "../../utils/storage/databaseService";
-import { getOcrResult, getOcrResultV2 } from "../../utils/request/reader";
+import { recognizeLocalOcr } from "../../utils/localOcr";
 import { BookHelper } from "../../assets/lib/kookit.min";
 import { parseWithSystemOCR } from "../../utils/request/common";
 import { isElectron } from "react-device-detect";
@@ -345,15 +345,15 @@ class Viewer extends React.Component<ViewerProps, ViewerState> {
           recognize:
             getDefaultOcrEngine(this.props.currentBook) === "system-ocr"
               ? parseWithSystemOCR
-              : ConfigService.getReaderConfig(ocrLangKey) === "accurate"
-                ? getOcrResultV2
-                : getOcrResult,
+              : (image: string) =>
+                  recognizeLocalOcr(
+                    image,
+                    getDefaultOcrEngine(this.props.currentBook),
+                    ConfigService.getReaderConfig(ocrLangKey) || ""
+                  ),
         },
         ocrEngine: getDefaultOcrEngine(this.props.currentBook),
-        serverRegion:
-          getServerRegion() === "china" && this.props.isAuthed
-            ? "china"
-            : "global",
+        serverRegion: getServerRegion(),
         paraSpacingValue:
           ConfigService.getReaderConfig("paraSpacingValue") || "1.5",
         titleSizeValue:

@@ -11,7 +11,6 @@ import {
   paraSpacingList,
   titleSizeList,
 } from "../../../constants/dropdownList";
-import toast from "react-hot-toast";
 import { getDefaultOcrEngine, getOcrLangList } from "../../../utils/common";
 
 class ConvertDialog extends React.Component<
@@ -144,17 +143,6 @@ class ConvertDialog extends React.Component<
                 className="lang-setting-dropdown"
                 value={getDefaultOcrEngine(this.props.currentBook)}
                 onChange={(event) => {
-                  if (
-                    event.target.value === "official-ai-ocr" &&
-                    !this.props.isAuthed
-                  ) {
-                    toast(
-                      this.props.t("Please upgrade to Pro to use this feature")
-                    );
-                    this.props.handleSetting(true);
-                    this.props.handleSettingMode("account");
-                    return;
-                  }
                   ConfigService.setReaderConfig(
                     this.props.currentBook.description.indexOf("scanned") > -1
                       ? "scannedOcrEngine"
@@ -219,7 +207,7 @@ class ConvertDialog extends React.Component<
                       key={item.value}
                       className="lang-setting-option"
                     >
-                      {this.props.t(item.label) + (item.isPro ? " (Pro)" : "")}
+                      {this.props.t(item.label)}
                     </option>
                   ))}
               </select>

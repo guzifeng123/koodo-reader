@@ -175,17 +175,6 @@ class Reader extends React.Component<ReaderProps, ReaderState> {
     }
     this.props.handleFetchBooks();
     this.props.handleFetchAuthed();
-    if (
-      key &&
-      ConfigService.getAllListConfig("convertPDFBooks").includes(key) &&
-      ConfigService.getReaderConfig(
-        this.props.currentBook?.description?.indexOf("scanned") > -1
-          ? "scannedOcrEngine"
-          : "textOcrEngine"
-      ) === "official-ai-ocr"
-    ) {
-      await this.props.handleFetchUserInfo();
-    }
     DatabaseService.getRecord(key, "books").then((book: Book | null) => {
       book = book || JSON.parse(ConfigService.getItem("tempBook") || "{}");
       if (!book) return;
