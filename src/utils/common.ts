@@ -1942,6 +1942,11 @@ export const getDefaultOcrEngine = (currentBook: any) => {
       : "textOcrEngine"
   );
   if (engine) return engine;
+  // On web/Capacitor the only working on-device engine is Tesseract
+  // (system-ocr is Electron IPC only and paddle has no vendored models).
+  if (!isElectron) {
+    return "tesseract";
+  }
   if (currentBook.description.indexOf("scanned") > -1) {
     return "paddle";
   } else {
@@ -1952,19 +1957,6 @@ export const getOcrLangList = (engine: string) => {
   let list: any[];
   if (engine === "tesseract") {
     list = ocrTesseractLangList;
-  } else if (engine === "official-ai-ocr") {
-    list = [
-      {
-        label: "General",
-        value: "general",
-        lang: "general",
-      },
-      {
-        label: "Accurate",
-        value: "accurate",
-        lang: "accurate",
-      },
-    ];
   } else if (engine === "system-ocr") {
     list = [
       {
@@ -1991,8 +1983,6 @@ export const getDefaultOcrLang = (engine: string, currentBook: any) => {
         (item) => item.lang === ConfigService.getReaderConfig("lang")
       )?.value || "chi_sim"
     );
-  } else if (engine === "official-ai-ocr") {
-    return "general";
   } else if (engine === "system-ocr") {
     return "auto";
   } else if (engine === "paddle") {
