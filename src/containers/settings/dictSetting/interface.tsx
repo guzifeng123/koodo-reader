@@ -10,6 +10,4 @@ export interface SettingInfoProps extends RouteComponentProps<any> {
 export interface SettingInfoState {
   dicts: DictMeta[];
   isLoading: boolean;
-  downloadingId: string;
-  downloadProgress: number;
 }

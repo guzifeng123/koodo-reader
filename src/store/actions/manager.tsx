@@ -403,51 +403,6 @@ export function handleFetchPlugins() {
             pluginList.push(assistPlugin);
           }
         }
-        if (ConfigService.getReaderConfig("isDisableAI") !== "yes") {
-          // 官方 AI 插件始终展示（不依赖登录），选择时再判断是否升级
-          let dictPlugin = new PluginModel(
-            "official-ai-dict-plugin",
-            "dictionary",
-            "Official AI Dictionary",
-            "dict",
-            "1.0.0",
-            "",
-            {},
-            officialDictList,
-            [],
-            "",
-            ""
-          );
-          pluginList.push(dictPlugin);
-          let transPlugin = new PluginModel(
-            "official-ai-trans-plugin",
-            "translation",
-            "Official AI Translation",
-            "translation",
-            "1.0.0",
-            "",
-            {},
-            officialTranList,
-            [],
-            "",
-            ""
-          );
-          pluginList.push(transPlugin);
-          let sumPlugin = new PluginModel(
-            "official-ai-assistant-plugin",
-            "assistant",
-            "Official AI Assistant",
-            "assistant",
-            "1.0.0",
-            "",
-            {},
-            officialTranList,
-            [],
-            "",
-            ""
-          );
-          pluginList.push(sumPlugin);
-        }
         const isAuthed = (await TokenService.getToken("is_authed")) === "yes";
         if (ConfigService.getReaderConfig("isDisableAI") !== "yes") {
           // 官方 AI 语音始终展示（不依赖登录），选择时再判断是否升级

@@ -83,21 +83,6 @@ class AISetting extends React.Component<SettingInfoProps, SettingInfoState> {
     });
   };
 
-  handleProviderChange = (providerId: string) => {
-    const provider = KookitConfig.AiProviderList.find(
-      (p) => p.id === providerId
-    );
-    this.setState({
-      selectedProvider: providerId,
-      selectedModel: "",
-      endpoint: provider ? provider.defaultEndpoint : "",
-      modelName: "",
-      modelId: "",
-      fetchedModels: [],
-      testResult: "",
-    });
-  };
-
   handleModelSelect = (modelId: string) => {
     if (!modelId) {
       this.setState({ selectedModel: "", modelName: "", modelId: "" });
@@ -113,35 +98,24 @@ class AISetting extends React.Component<SettingInfoProps, SettingInfoState> {
   };
 
   handleFetchModels = async () => {
-    const provider = KookitConfig.AiProviderList.find(
-      (p) => p.id === this.state.selectedProvider
-    );
-    if (!provider || !provider.modelsEndpoint) {
-      toast.error(
-        this.props.t(
-          "This provider does not support fetching model list, please fill in manually"
-        )
-      );
-      return;
-    }
-    if (
-      !this.state.apiKey &&
-      this.state.selectedProvider !== "ollama" &&
-      this.state.selectedProvider !== "lmstudio" &&
-      this.state.selectedProvider !== "vllm"
-    ) {
-      toast.error(this.props.t("Please enter API Key first"));
+    const { endpoint, apiKey } = this.state;
+    if (!endpoint) {
+      toast.error(this.props.t("Please enter the endpoint first"));
       return;
     }
     this.setState({ isFetchingModels: true });
     try {
+      // 直连用户自填的 OpenAI 兼容 endpoint：GET {endpoint}/models
+      const modelsUrl = endpoint.replace(/\/+$/, "") + "/models";
       const headers: Record<string, string> = {};
-      if (this.state.apiKey) {
-        headers["Authorization"] = `Bearer ${this.state.apiKey}`;
+      if (apiKey) {
+        headers["Authorization"] = `Bearer ${apiKey}`;
       }
-      const response = await aiRequest(provider.modelsEndpoint, "GET", headers);
+      const response = await aiRequest(modelsUrl, "GET", headers);
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        throw new Error(
+          `HTTP ${response.status}: ${response.body.substring(0, 200)}`
+        );
       }
       const data = JSON.parse(response.body);
       const rawModels = data.data || data.models || data.results || data || [];
@@ -178,15 +152,28 @@ class AISetting extends React.Component<SettingInfoProps, SettingInfoState> {
 
   handleTest = async () => {
     const { endpoint, modelId, apiKey } = this.state;
-    if (!endpoint || !modelId || !apiKey) {
-      toast.error(this.props.t("Please fill in all required fields"));
+    if (!endpoint) {
+      toast.error(this.props.t("Please enter the endpoint first"));
       return;
     }
     this.setState({ isTesting: true, testResult: "" });
     try {
-      const chatEndpoint = endpoint.endsWith("/")
-        ? endpoint + "chat/completions"
-        : endpoint + "/chat/completions";
+      if (!modelId) {
+        // 未填模型名时，先验证 /models 连通性
+        const modelsUrl = endpoint.replace(/\/+$/, "") + "/models";
+        const headers: Record<string, string> = {};
+        if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+        const response = await aiRequest(modelsUrl, "GET", headers);
+        if (!response.ok) {
+          throw new Error(
+            `HTTP ${response.status}: ${response.body.substring(0, 200)}`
+          );
+        }
+        this.setState({ testResult: "success" });
+        toast.success(this.props.t("Test successful") + ": " + modelsUrl);
+        return;
+      }
+      const chatEndpoint = endpoint.replace(/\/+$/, "") + "/chat/completions";
       const response = await aiRequest(
         chatEndpoint,
         "POST",
@@ -222,34 +209,24 @@ class AISetting extends React.Component<SettingInfoProps, SettingInfoState> {
   };
 
   handleSave = async () => {
-    const {
-      endpoint,
-      modelName,
-      modelId,
-      apiKey,
-      selectedProvider,
-      isEditing,
-      editingKey,
-    } = this.state;
-    if (!endpoint || !modelName || !modelId || !apiKey) {
+    const { endpoint, modelId, apiKey, isEditing, editingKey } = this.state;
+    if (!endpoint || !modelId || !apiKey) {
       toast.error(this.props.t("Please fill in all required fields"));
       return;
     }
-    const provider = KookitConfig.AiProviderList.find(
-      (p) => p.id === selectedProvider
-    );
+    // 纯自助 OpenAI 兼容供应商：endpoint/apiKey/model 全部来自用户自填
     const config: AIModelConfig = {
       endpoint,
-      modelName,
+      modelName: modelId,
       modelId,
       apiKey,
-      providerId: selectedProvider || "custom",
-      providerName: provider ? provider.name : "Custom",
+      providerId: "custom",
+      providerName: "OpenAI Compatible",
     };
     const key = isEditing ? editingKey : Date.now().toString();
     const modelEntry = {
       key,
-      displayName: modelName,
+      displayName: modelId,
       config,
     };
 
@@ -305,10 +282,10 @@ class AISetting extends React.Component<SettingInfoProps, SettingInfoState> {
       isAddNew: true,
       isEditing: true,
       editingKey: plugin.key,
-      selectedProvider: config.providerId || "custom",
+      selectedProvider: "custom",
       selectedModel: config.modelId || "",
       endpoint: config.endpoint || "",
-      modelName: config.modelName || plugin.displayName || "",
+      modelName: config.modelName || config.modelId || "",
       modelId: config.modelId || "",
       apiKey: config.apiKey || "",
       testResult: "",
@@ -335,12 +312,6 @@ class AISetting extends React.Component<SettingInfoProps, SettingInfoState> {
   };
 
   renderAddForm = () => {
-    const isCustom =
-      !this.state.selectedProvider || this.state.selectedProvider === "custom";
-    const provider = KookitConfig.AiProviderList.find(
-      (p) => p.id === this.state.selectedProvider
-    );
-    const hasModelsEndpoint = provider && provider.modelsEndpoint;
     const hasFetchedModels = this.state.fetchedModels.length > 0;
 
     return (
@@ -352,78 +323,92 @@ class AISetting extends React.Component<SettingInfoProps, SettingInfoState> {
           fontWeight: 500,
         }}
       >
-        {/* Step 1: Provider selection */}
+        {/* Base URL (Endpoint) */}
         <div className="ai-setting-form-row">
           <label className="ai-setting-label">
-            <Trans>Provider</Trans>
+            <Trans>Endpoint</Trans>
           </label>
-          <select
-            className="lang-setting-dropdown"
-            style={{ width: "100px" }}
-            value={this.state.selectedProvider}
-            onChange={(e) => this.handleProviderChange(e.target.value)}
-          >
-            <option value="" className="lang-setting-option">
-              {this.props.t("Please select")}
-            </option>
-            {KookitConfig.AiProviderList.map((p) => (
-              <option key={p.id} value={p.id} className="lang-setting-option">
-                {this.props.t(p.name)}
-              </option>
-            ))}
-          </select>
+          <input
+            type="text"
+            className="token-dialog-username-box"
+            placeholder="https://api.example.com/v1"
+            value={this.state.endpoint}
+            id="ai-endpoint-box"
+            onContextMenu={() => {
+              handleContextMenu("ai-endpoint-box", true);
+            }}
+            onChange={(e) =>
+              this.setState({ endpoint: e.target.value.trim() })
+            }
+          />
         </div>
 
-        {/* Step 2: API Key (shown after provider is selected, before fetching models) */}
-        {(this.state.selectedProvider || isCustom) &&
-          this.state.selectedProvider !== "" && (
-            <div className="ai-setting-form-row">
-              <label className="ai-setting-label">API Key</label>
-              <input
-                type="password"
-                className="token-dialog-username-box"
-                placeholder={this.props.t("Enter your API Key")}
-                value={this.state.apiKey}
-                id="ai-api-key-box"
-                onContextMenu={() => {
-                  handleContextMenu("ai-api-key-box", true);
-                }}
-                onChange={(e) =>
-                  this.setState({ apiKey: e.target.value.trim() })
-                }
-              />
-            </div>
-          )}
+        {/* API Key */}
+        <div className="ai-setting-form-row">
+          <label className="ai-setting-label">API Key</label>
+          <input
+            type="password"
+            className="token-dialog-username-box"
+            placeholder={this.props.t("Enter your API Key")}
+            value={this.state.apiKey}
+            id="ai-api-key-box"
+            onContextMenu={() => {
+              handleContextMenu("ai-api-key-box", true);
+            }}
+            onChange={(e) =>
+              this.setState({ apiKey: e.target.value.trim() })
+            }
+          />
+        </div>
 
-        {/* Step 3: Fetch models button (for non-custom providers with modelsEndpoint) */}
-        {!isCustom && hasModelsEndpoint && (
-          <div className="ai-setting-form-row">
-            <span
-              className="change-location-button"
-              style={{
-                display: "inline-flex",
-                marginTop: "6px",
-              }}
-              onClick={this.handleFetchModels}
-            >
-              {this.state.isFetchingModels ? (
-                <Trans>Loading...</Trans>
-              ) : (
-                <Trans>Fetch models</Trans>
-              )}
-            </span>
-          </div>
-        )}
+        {/* Model ID (free text) + Fetch models button */}
+        <div className="ai-setting-form-row">
+          <label className="ai-setting-label">
+            <Trans>Model ID</Trans>
+          </label>
+          <input
+            type="text"
+            className="token-dialog-username-box"
+            placeholder={this.props.t(
+              "e.g. gpt-4o, claude-sonnet-4-20250514"
+            )}
+            value={this.state.modelId}
+            id="ai-model-id-box"
+            onContextMenu={() => {
+              handleContextMenu("ai-model-id-box", true);
+            }}
+            onChange={(e) => {
+              const modelId = e.target.value.trim();
+              this.setState({ modelId, modelName: modelId });
+            }}
+          />
+          <span
+            className="change-location-button"
+            style={{
+              display: "inline-flex",
+              marginLeft: "10px",
+              marginTop: "6px",
+              whiteSpace: "nowrap",
+            }}
+            onClick={this.handleFetchModels}
+          >
+            {this.state.isFetchingModels ? (
+              <Trans>Loading...</Trans>
+            ) : (
+              <Trans>Fetch models</Trans>
+            )}
+          </span>
+        </div>
 
-        {/* Step 4: Model selection dropdown (after models fetched) */}
-        {!isCustom && hasFetchedModels && (
+        {/* Model selection dropdown (after models fetched) */}
+        {hasFetchedModels && (
           <div className="ai-setting-form-row">
             <label className="ai-setting-label">
               <Trans>Select model</Trans>
             </label>
             <select
               className="lang-setting-dropdown"
-              style={{ width: "100px" }}
+              style={{ width: "160px" }}
               value={this.state.selectedModel}
               onChange={(e) => this.handleModelSelect(e.target.value)}
             >
@@ -437,69 +422,6 @@ class AISetting extends React.Component<SettingInfoProps, SettingInfoState> {
               ))}
             </select>
           </div>
-        )}
-
-        {/* Step 5: Endpoint, Model name, Model ID (always shown for custom, shown after selection for others) */}
-        {(isCustom || this.state.selectedModel || this.state.isEditing) && (
-          <>
-            {/* Endpoint */}
-            <div className="ai-setting-form-row">
-              <label className="ai-setting-label">Endpoint</label>
-              <input
-                type="text"
-                className="token-dialog-username-box"
-                placeholder="https://api.example.com/v1"
-                value={this.state.endpoint}
-                id="ai-endpoint-box"
-                onContextMenu={() => {
-                  handleContextMenu("ai-endpoint-box", true);
-                }}
-                onChange={(e) =>
-                  this.setState({ endpoint: e.target.value.trim() })
-                }
-              />
-            </div>
-
-            {/* Model name */}
-            <div className="ai-setting-form-row">
-              <label className="ai-setting-label">
-                <Trans>Model name</Trans>
-              </label>
-              <input
-                type="text"
-                className="token-dialog-username-box"
-                placeholder={this.props.t("Display name of the model")}
-                value={this.state.modelName}
-                id="ai-model-name-box"
-                onContextMenu={() => {
-                  handleContextMenu("ai-model-name-box", true);
-                }}
-                onChange={(e) => this.setState({ modelName: e.target.value })}
-              />
-            </div>
-
-            {/* Model ID */}
-            <div className="ai-setting-form-row">
-              <label className="ai-setting-label">
-                <Trans>Model ID</Trans>
-              </label>
-              <input
-                type="text"
-                className="token-dialog-username-box"
-                placeholder={this.props.t(
-                  "e.g. gpt-4o, claude-sonnet-4-20250514"
-                )}
-                value={this.state.modelId}
-                id="ai-model-id-box"
-                onContextMenu={() => {
-                  handleContextMenu("ai-model-id-box", true);
-                }}
-                onChange={(e) =>
-                  this.setState({ modelId: e.target.value.trim() })
-                }
-              />
-            </div>
-          </>
         )}
 
         {/* Buttons: Add/Save, Cancel, Test */}

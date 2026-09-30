@@ -9,7 +9,6 @@ import axios from "axios";
 import { Trans } from "react-i18next";
 import toast from "react-hot-toast";
 import { getDefaultTransTarget, openExternalUrl } from "../../../utils/common";
-import { getTransStream } from "../../../utils/request/reader";
 import { chatStream } from "../../../utils/request/common";
 import { getIframeDoc } from "../../../utils/reader/docUtil";
 import { getBuiltinTranslation } from "../../../utils/plugins/rendererRegistry";
@@ -61,8 +60,7 @@ class PopupTrans extends React.Component<PopupTransProps, PopupTransState> {
     this.setState({ originalText: originalText });
     if (!this.state.transService) {
       let pluginList = this.props.plugins.filter(
-        (item) =>
-          item.type === "translation" && !item.key.startsWith("official-ai-")
+        (item) => item.type === "translation"
       );
       if (pluginList.length > 0) {
         this.setState({
@@ -70,15 +68,6 @@ class PopupTrans extends React.Component<PopupTransProps, PopupTransState> {
         });
         ConfigService.setReaderConfig("transService", pluginList[0].key);
         await new Promise((resolve) => setTimeout(resolve, 100));
-      } else if (this.props.isAuthed) {
-        this.setState({
-          transService: "official-ai-trans-plugin",
-          isAddNew: false,
-        });
-        ConfigService.setReaderConfig(
-          "transService",
-          "official-ai-trans-plugin"
-        );
       } else {
         this.setState({
           isAddNew: true,
@@ -99,8 +88,6 @@ class PopupTrans extends React.Component<PopupTransProps, PopupTransState> {
   handleTrans = async (text: string) => {
     if (
       ConfigService.getReaderConfig("transService") &&
-      ConfigService.getReaderConfig("transService") !==
-        "official-ai-trans-plugin" &&
       ConfigService.getReaderConfig("transService") !== "custom-ai-trans-plugin"
     ) {
       let plugin = this.props.plugins.find(
@@ -201,54 +188,9 @@ class PopupTrans extends React.Component<PopupTransProps, PopupTransState> {
       this.stopUpdateInterval();
       this.textAccumulator = "";
       this.setState({ isFinishOutput: true, isAiWaiting: false });
-    } else if (
-      this.props.isAuthed &&
-      ConfigService.getReaderConfig("isDisableAI") !== "yes"
-    ) {
-      this.setState({
-        transService: "official-ai-trans-plugin",
-        isAddNew: false,
-      });
-      let plugin = this.props.plugins.find(
-        (item) => item.key === "official-ai-trans-plugin"
-      );
-      if (!plugin) {
-        return;
-      }
-      let targetLang =
-        ConfigService.getReaderConfig("transTarget") ||
-        getDefaultTransTarget(plugin.langList);
-      if (targetLang === "Traditional Chinese") {
-        targetLang = "繁体中文";
-      }
-      this.textAccumulator = "";
-      this.startUpdateInterval();
-      await getTransStream(
-        text,
-        ConfigService.getReaderConfig("transSource") || "Automatic",
-        ConfigService.getReaderConfig("transTarget") ||
-          getDefaultTransTarget(plugin.langList),
-        (result) => {
-          if (result && result.done) {
-            return;
-          }
-          if (result && result.text) {
-            this.textAccumulator += result.text;
-          }
-        }
-      );
-      this.stopUpdateInterval();
-      this.textAccumulator = "";
-      this.setState({ isFinishOutput: true });
     }
   };
   handleChangeService(target: string) {
-    if (target === "official-ai-trans-plugin" && !this.props.isAuthed) {
-      toast(this.props.t("Please upgrade to Pro to use this feature"));
-      this.props.handleSetting(true);
-      this.props.handleSettingMode("account");
-      return;
-    }
     this.setState({ transService: target }, () => {
       ConfigService.setReaderConfig("transService", target);
       let plugin = this.props.plugins.find(
@@ -310,12 +252,6 @@ class PopupTrans extends React.Component<PopupTransProps, PopupTransState> {
                   >
                     <span className={`icon-${item.icon} trans-icon`}></span>
                     {this.props.t(item.displayName)}
-                    {item.key === "official-ai-trans-plugin" && (
-                      <span style={{ fontSize: "13px", color: "#f16464" }}>
-                        {" "}
-                        (Pro)
-                      </span>
-                    )}
                   </div>
                 );
               })}
