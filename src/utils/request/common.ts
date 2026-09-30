@@ -100,7 +100,8 @@ export const chatStream = async (
   onMessage: (result) => void
 ) => {
   const messages = [...chat, { role: "user", content: prompt }].slice(-5);
-  const chatUrl = url + "/chat/completions";
+  // 直连用户自填的 OpenAI 兼容 endpoint，拼接 /chat/completions
+  const chatUrl = url.replace(/\/+$/, "") + "/chat/completions";
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Authorization: "Bearer " + apiKey,

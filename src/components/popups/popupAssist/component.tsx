@@ -11,7 +11,6 @@ import { Trans } from "react-i18next";
 import { handleContextMenu } from "../../../utils/common";
 import toast from "react-hot-toast";
 import { saveAs } from "file-saver";
-import { getAnswerStream } from "../../../utils/request/reader";
 import { chatStream } from "../../../utils/request/common";
 import { marked } from "marked";
 import { sampleQuestion } from "../../../constants/settingList";
@@ -147,20 +146,13 @@ class PopupAssist extends React.Component<PopupAssistProps, PopupAssistState> {
     }
     if (!this.state.aiService) {
       let pluginList = this.props.plugins.filter(
-        (item) =>
-          item.type === "assistant" && !item.key.startsWith("official-ai-")
+        (item) => item.type === "assistant"
       );
       if (pluginList.length > 0) {
         this.setState({
           aiService: pluginList[0].key,
         });
         ConfigService.setReaderConfig("aiService", pluginList[0].key);
-      } else if (this.props.isAuthed) {
-        this.setState({
-          aiService: "official-ai-assistant-plugin",
-          isAddNew: false,
-        });
-        ConfigService.setReaderConfig("aiService", "official-ai-assistant-plugin");
       } else {
         this.setState({
           isAddNew: true,
@@ -241,11 +233,10 @@ class PopupAssist extends React.Component<PopupAssistProps, PopupAssistState> {
             .trim()
         : "";
     if (
-      (!ConfigService.getReaderConfig("aiService") ||
-        this.props.plugins.findIndex(
-          (item) => item.key === ConfigService.getReaderConfig("aiService")
-        ) === -1) &&
-      !this.props.isAuthed
+      !ConfigService.getReaderConfig("aiService") ||
+      this.props.plugins.findIndex(
+        (item) => item.key === ConfigService.getReaderConfig("aiService")
+      ) === -1
     ) {
       this.setState({ isAddNew: true });
     }
@@ -330,70 +321,6 @@ class PopupAssist extends React.Component<PopupAssistProps, PopupAssistState> {
             question: "",
             isWaiting: false,
           });
-        }
-        if (ConfigService.getReaderConfig("isManualScroll") !== "yes") {
-          this.scrollToBottom();
-        }
-      } else if (
-        ConfigService.getReaderConfig("aiService") &&
-        ConfigService.getReaderConfig("aiService") !== "official-ai-assistant-plugin"
-      ) {
-      } else if (this.props.isAuthed) {
-        let plugin = this.props.plugins.find(
-          (item) => item.key === "official-ai-assistant-plugin"
-        );
-        if (!plugin) {
-          return;
-        }
-        this.answerTextAccumulator = "";
-        this.startUpdateInterval();
-        let res = await getAnswerStream(
-          text,
-          this.state.question,
-          this.state.mode === "ask"
-            ? this.state.askHistory
-            : this.state.chatHistory,
-          this.state.mode,
-          (result) => {
-            if (result && result.text) {
-              if (!this.answerTextAccumulator) {
-                this.setState({ isWaiting: false });
-              }
-              this.answerTextAccumulator += result.text;
-            }
-          }
-        );
-        this.stopUpdateInterval(this.answerTextAccumulator);
-        const finalAnswer = this.answerTextAccumulator;
-        this.answerTextAccumulator = "";
-        if (res.data && res.done) {
-          if (this.state.mode === "ask") {
-            this.setState({
-              askHistory: [
-                ...this.state.askHistory,
-                {
-                  role: "assistant",
-                  content: finalAnswer,
-                },
-              ],
-              answer: "",
-              question: "",
-              isWaiting: false,
-            });
-          } else {
-            this.setState({
-              chatHistory: [
-                ...this.state.chatHistory,
-                {
-                  role: "assistant",
-                  content: finalAnswer,
-                },
-              ],
-              answer: "",
-              question: "",
-              isWaiting: false,
-            });
-          }
         }
         if (ConfigService.getReaderConfig("isManualScroll") !== "yes") {
           this.scrollToBottom();
