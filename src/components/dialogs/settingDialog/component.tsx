@@ -3,7 +3,6 @@ import "./settingDialog.css";
 import { SettingInfoProps, SettingInfoState } from "./interface";
 import { Trans } from "react-i18next";
 import GeneralSetting from "../../../containers/settings/generalSetting";
-import SyncSetting from "../../../containers/settings/syncSetting";
 import AccountSetting from "../../../containers/settings/accountSetting";
 import PluginSetting from "../../../containers/settings/pluginSetting";
 import ReadingSetting from "../../../containers/settings/readingSetting";
@@ -31,8 +30,6 @@ class SettingDialog extends React.Component<
   }
   componentDidMount(): void {
     this.props.handleFetchPlugins();
-    this.props.handleFetchDataSourceList();
-    this.props.handleFetchDefaultSyncOption();
   }
 
   componentDidUpdate(prevProps: SettingInfoProps): void {
@@ -76,8 +73,6 @@ class SettingDialog extends React.Component<
         return "Appearance";
       case "plugins":
         return "Plugins";
-      case "sync":
-        return "Sync and backup";
       case "account":
         return "Account";
       case "about":
@@ -133,7 +128,6 @@ class SettingDialog extends React.Component<
               "20px"
             )}
 
-            {this.renderSidebarItem("sync", "icon-sync", "Sync and backup", "")}
             {this.renderSidebarItem(
               "more",
               "icon-more",
@@ -214,8 +208,6 @@ class SettingDialog extends React.Component<
               <ShortcutSetting />
             ) : this.props.settingMode === "appearance" ? (
               <AppearanceSetting />
-            ) : this.props.settingMode === "sync" ? (
-              <SyncSetting />
             ) : this.props.settingMode === "account" ? (
               <AccountSetting />
             ) : this.props.settingMode === "data" ? (

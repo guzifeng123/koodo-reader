@@ -3,26 +3,19 @@ import { SettingInfoProps, SettingInfoState } from "./interface";
 import { Trans } from "react-i18next";
 import {
   clearAllData,
-  confirmBrowserExtensionAsync,
-  generateSyncRecord,
   getStorageLocation,
-  getWebsiteUrl,
   reloadManager,
   vexComfirmAsync,
-  vexOpenAsync,
   vexPromptAsync,
 } from "../../../utils/common";
 
 import toast from "react-hot-toast";
 import { isElectron } from "react-device-detect";
 import { LocalFileManager } from "../../../utils/file/localFile";
-import {
-  ConfigService,
-  KOReaderUtil,
-} from "../../../assets/lib/kookit-extra-browser.min";
+import { ConfigService } from "../../../assets/lib/kookit-extra-browser.min";
 import { changeLibrary, changePath } from "../../../utils/file/common";
-import { getSnapshots } from "../../../utils/file/backup";
-import { restoreFromSnapshot } from "../../../utils/file/restore";
+import { backup, getSnapshots } from "../../../utils/file/backup";
+import { restore, restoreFromSnapshot } from "../../../utils/file/restore";
 import {
   exportBooks,
   exportDictionaryHistory,
@@ -31,12 +24,7 @@ import {
 } from "../../../utils/file/export";
 import { importNotesData } from "../../../utils/file/importData";
 import DatabaseService from "../../../utils/storage/databaseService";
-import {
-  dataSettingList,
-  noteSyncSettingList,
-  wordSyncSettingList,
-} from "../../../constants/settingList";
-import TokenService from "../../../utils/storage/tokenService";
+import { dataSettingList } from "../../../constants/settingList";
 declare var window: any;
 class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
   constructor(props: SettingInfoProps) {
@@ -49,24 +37,6 @@ class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
       exportWordsFormat: "",
       isEnableDiscordRPC:
         ConfigService.getReaderConfig("isEnableDiscordRPC") === "yes",
-      isEnableKoReaderSync:
-        ConfigService.getReaderConfig("isEnableKoReaderSync") === "yes",
-      isEnableNotionSync:
-        ConfigService.getReaderConfig("isEnableNotionSync") === "yes",
-      isEnableYuqueSync:
-        ConfigService.getReaderConfig("isEnableYuqueSync") === "yes",
-      isEnableReadwiseSync:
-        ConfigService.getReaderConfig("isEnableReadwiseSync") === "yes",
-      isEnableMarkdownSync:
-        ConfigService.getReaderConfig("isEnableMarkdownSync") === "yes",
-      isEnableEudicSync:
-        ConfigService.getReaderConfig("isEnableEudicSync") === "yes",
-      isEnableAnkiSync:
-        ConfigService.getReaderConfig("isEnableAnkiSync") === "yes",
-      isEnableImaSync:
-        ConfigService.getReaderConfig("isEnableImaSync") === "yes",
-      isEnableSiYuanSync:
-        ConfigService.getReaderConfig("isEnableSiYuanSync") === "yes",
     };
   }
   async componentDidMount() {
@@ -92,318 +62,8 @@ class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
     toast.success(this.props.t("Change successful"));
   };
 
-  handleKOReaderSyncSetting = async () => {
-    const currentlyEnabled = this.state.isEnableKoReaderSync;
-    if (currentlyEnabled) {
-      this.setState({ isEnableKoReaderSync: false });
-      ConfigService.setReaderConfig("isEnableKoReaderSync", "no");
-      toast.success(this.props.t("Change successful"));
-      return;
-    }
-
-    if (!isElectron) {
-      if (!(await confirmBrowserExtensionAsync())) {
-        return;
-      }
-    }
-
-    const savedConfig =
-      ConfigService.getObjectConfig(
-        "koReaderSyncConfig",
-        "thirdpartyToken",
-        {}
-      ) || {};
-    const labels = {
-      serverUrl: this.props.t("Server address"),
-      username: this.props.t("Username"),
-      password: this.props.t("Password"),
-    };
-    const result = await vexOpenAsync(
-      {
-        serverUrl: {
-          value: savedConfig.serverUrl || "",
-          placeholder: "https://sync.koreader.rocks",
-          type: "text",
-        },
-        username: {
-          value: savedConfig.username || "",
-          placeholder: this.props.t("Enter username"),
-          type: "text",
-        },
-        password: {
-          value: "",
-          placeholder:
-            savedConfig.passwordHash && savedConfig.username
-              ? this.props.t("Leave blank to keep the current password")
-              : this.props.t("Enter password"),
-          type: "password",
-        },
-      },
-      "",
-      labels,
-      getWebsiteUrl() +
-        `/${
-          ConfigService.getReaderConfig("lang") &&
-          ConfigService.getReaderConfig("lang").startsWith("zh")
-            ? "zh"
-            : "en"
-        }/add-thirdparty`
-    );
-
-    if (!result) {
-      return;
-    }
-
-    if (!result.serverUrl || !result.username) {
-      toast.error(this.props.t("Please fill in all fields"));
-      return;
-    }
-    if (!result.password && !savedConfig.passwordHash) {
-      toast.error(this.props.t("Please fill in all fields"));
-      return;
-    }
-
-    try {
-      toast.loading(this.props.t("Validating server info..."), {
-        id: "ko-reader-sync",
-      });
-      const koReaderUtil = new KOReaderUtil(
-        ConfigService,
-        TokenService,
-        DatabaseService
-      );
-      const verifiedConfig =
-        await koReaderUtil.verifyAndBuildKOReaderSyncConfig({
-          serverUrl: result.serverUrl,
-          username: result.username,
-          password: result.password,
-          passwordHash:
-            !result.password && savedConfig.username === result.username
-              ? savedConfig.passwordHash
-              : "",
-        });
-      ConfigService.setObjectConfig(
-        "koReaderSyncConfig",
-        verifiedConfig,
-        "thirdpartyToken"
-      );
-      this.setState({ isEnableKoReaderSync: true });
-      ConfigService.setReaderConfig("isEnableKoReaderSync", "yes");
-      toast.success(this.props.t("Validation successful"), {
-        id: "ko-reader-sync",
-      });
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : this.props.t("Validation failed"),
-        {
-          id: "ko-reader-sync",
-        }
-      );
-    }
-  };
-
   handleDataSetting = async (item: any) => {
-    if (item.propName === "isEnableKoReaderSync") {
-      await this.handleKOReaderSyncSetting();
-      return;
-    }
     this.handleSetting(item.propName);
-  };
-
-  handleNoteSyncSetting = async (item: any) => {
-    const currentlyEnabled = this.state[item.propName];
-
-    if (!currentlyEnabled && item.requiresAuth) {
-      if (!isElectron) {
-        if (!(await confirmBrowserExtensionAsync())) {
-          return;
-        }
-      }
-
-      // Special case: Markdown sync uses a folder picker in Electron
-      if (item.propName === "isEnableMarkdownSync" && isElectron) {
-        const ipcRenderer = window.electronAPI;
-        const folder = await ipcRenderer.invoke("select-path");
-        if (!folder) return;
-        ConfigService.setObjectConfig(
-          item.authConfigKey,
-          { folder: folder },
-          "thirdpartyToken"
-        );
-        this.setState({ [item.propName]: true } as any);
-        ConfigService.setReaderConfig(item.propName, "yes");
-        toast.success(this.props.t("Change successful"));
-        return;
-      }
-
-      // Enabling: prompt for auth credentials
-      const existingConfig = ConfigService.getObjectConfig(
-        item.authConfigKey,
-        "thirdpartyToken",
-        {}
-      );
-      let savedValues: Record<string, any> = {};
-      if (existingConfig && Object.keys(existingConfig).length > 0) {
-        savedValues = existingConfig;
-      }
-      // Build defaultValues record: key -> saved value or placeholder
-      const defaultValues: Record<string, any> = {};
-      const labelsMap: Record<string, string> = {};
-      for (const field of item.authFields as Array<{
-        key: string;
-        label: string;
-        placeholder: string;
-      }>) {
-        defaultValues[field.key] =
-          savedValues[field.key] ?? "[" + this.props.t(field.placeholder) + "]";
-        labelsMap[field.key] = this.props.t(field.label);
-      }
-
-      const result = await vexOpenAsync(
-        defaultValues,
-        "",
-        labelsMap,
-        getWebsiteUrl() +
-          (ConfigService.getReaderConfig("lang").startsWith("zh")
-            ? "/zh"
-            : "/en") +
-          "/add-thirdparty"
-      );
-
-      if (!result) {
-        // User cancelled
-        return;
-      }
-
-      // Validate that all fields are filled
-      const allFilled = Object.values(result).every(
-        (v) => v && String(v).trim().length > 0
-      );
-      if (!allFilled) {
-        toast.error(this.props.t("Please fill in all fields"));
-        return;
-      }
-
-      // Save auth config
-      ConfigService.setObjectConfig(
-        item.authConfigKey,
-        result,
-        "thirdpartyToken"
-      );
-
-      // Enable the setting
-      this.setState({ [item.propName]: true } as any);
-      ConfigService.setReaderConfig(item.propName, "yes");
-      toast.success(this.props.t("Change successful"));
-    } else {
-      // Disabling: just toggle off
-      this.setState({ [item.propName]: false } as any);
-      ConfigService.setReaderConfig(item.propName, "no");
-      toast.success(this.props.t("Change successful"));
-    }
-  };
-
-  renderNoteSyncOptions = () => {
-    return noteSyncSettingList.map((item) => {
-      return (
-        <div
-          style={item.isElectron ? (isElectron ? {} : { display: "none" }) : {}}
-          key={item.propName}
-        >
-          <div className="setting-dialog-new-title" key={item.title}>
-            <span style={{ width: "calc(100% - 100px)" }}>
-              <Trans>{item.title}</Trans>
-            </span>
-            <span
-              className="single-control-switch"
-              onClick={() => {
-                this.handleNoteSyncSetting(item);
-              }}
-              style={this.state[item.propName] ? {} : { opacity: 0.6 }}
-            >
-              <span
-                className="single-control-button"
-                style={
-                  this.state[item.propName]
-                    ? {
-                        transform: "translateX(20px)",
-                        transition: "transform 0.5s ease",
-                      }
-                    : {
-                        transform: "translateX(0px)",
-                        transition: "transform 0.5s ease",
-                      }
-                }
-              ></span>
-            </span>
-          </div>
-          <p className="setting-option-subtitle">
-            <Trans>{item.desc}</Trans>
-          </p>
-          {item.propName === "isEnableMarkdownSync" &&
-            this.state[item.propName] &&
-            isElectron &&
-            (() => {
-              let folder = "";
-
-              const config = ConfigService.getObjectConfig(
-                item.authConfigKey,
-                "thirdpartyToken",
-                {}
-              );
-              if (config && Object.keys(config).length > 0) {
-                const parsed = config;
-                folder = parsed["folder"] || "";
-              }
-
-              return folder ? (
-                <div className="setting-dialog-location-title">{folder}</div>
-              ) : null;
-            })()}
-        </div>
-      );
-    });
-  };
-
-  renderWordSyncOptions = () => {
-    return wordSyncSettingList.map((item) => {
-      return (
-        <div key={item.propName}>
-          <div className="setting-dialog-new-title" key={item.title}>
-            <span style={{ width: "calc(100% - 100px)" }}>
-              <Trans>{item.title}</Trans>
-            </span>
-            <span
-              className="single-control-switch"
-              onClick={() => {
-                this.handleNoteSyncSetting(item);
-              }}
-              style={this.state[item.propName] ? {} : { opacity: 0.6 }}
-            >
-              <span
-                className="single-control-button"
-                style={
-                  this.state[item.propName]
-                    ? {
-                        transform: "translateX(20px)",
-                        transition: "transform 0.5s ease",
-                      }
-                    : {
-                        transform: "translateX(0px)",
-                        transition: "transform 0.5s ease",
-                      }
-                }
-              ></span>
-            </span>
-          </div>
-          <p className="setting-option-subtitle">
-            <Trans>{item.desc}</Trans>
-          </p>
-        </div>
-      );
-    });
   };
 
   renderSwitchOption = (optionList: any[]) => {
@@ -461,10 +121,6 @@ class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
     }
     ConfigService.setItem("storageLocation", newPath);
     this.setState({ storageLocation: newPath });
-    let targetDrive = ConfigService.getItem("defaultSyncOption");
-    await ipcRenderer.invoke("cloud-close", {
-      service: targetDrive,
-    });
 
     toast.success(this.props.t("Change successful"));
     this.props.handleFetchBooks();
@@ -496,13 +152,8 @@ class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
       } catch (error) {
         console.error("Error reading config.json:", error);
       }
-      let targetDrive = ConfigService.getItem("defaultSyncOption");
-      await ipcRenderer.invoke("cloud-close", {
-        service: targetDrive,
-      });
       toast.success(this.props.t("Switch successful"));
       this.props.handleFetchBooks();
-      await generateSyncRecord();
       setTimeout(() => {
         this.props.history.push("/manager/home");
       }, 2000);
@@ -582,8 +233,67 @@ class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
     return (
       <>
         {this.renderSwitchOption(dataSettingList)}
-        {this.renderNoteSyncOptions()}
-        {this.renderWordSyncOptions()}
+        <div className="setting-dialog-new-title">
+          <Trans>Backup library to a local file</Trans>
+          <span
+            className="change-location-button"
+            onClick={async () => {
+              let result = await backup("local");
+              if (result === "cancel") {
+                return;
+              }
+              if (result === "success") {
+                toast.success(this.props.t("Execute successful"), {
+                  id: "backup",
+                });
+                this.props.handleFetchBooks();
+              } else {
+                toast.error(this.props.t("Backup failed"), { id: "backup" });
+              }
+            }}
+          >
+            <Trans>Backup</Trans>
+          </span>
+        </div>
+        <p className="setting-option-subtitle">
+          <Trans>
+            Download a full backup of your library (books, covers, config and
+            databases) as a single .zip file to your device.
+          </Trans>
+        </p>
+        <div className="setting-dialog-new-title">
+          <Trans>Restore library from a local file</Trans>
+          <span
+            className="change-location-button"
+            onClick={async () => {
+              let result = await restore("local");
+              if (result === "cancel") {
+                return;
+              }
+              if (result === "success") {
+                toast.success(this.props.t("Execute successful"), {
+                  id: "backup",
+                });
+                this.props.handleFetchBooks();
+                setTimeout(() => {
+                  this.props.history.push("/manager/home");
+                }, 2000);
+              } else {
+                toast.error(
+                  this.props.t("Download failed,network problem or no backup"),
+                  { id: "backup" }
+                );
+              }
+            }}
+          >
+            <Trans>Restore</Trans>
+          </span>
+        </div>
+        <p className="setting-option-subtitle">
+          <Trans>
+            Select a previously exported .zip backup file to restore your library.
+          </Trans>
+        </p>
         {isElectron && (
           <>
             <div className="setting-dialog-new-title">

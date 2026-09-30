@@ -18,9 +18,7 @@ import {
 import toast from "react-hot-toast";
 import BookUtil from "../../utils/file/bookUtil";
 import i18n from "../../i18n";
-import { langToName } from "../../utils/common";
 import { resetReaderRequest } from "../../utils/request/reader";
-import { resetThirdpartyRequest } from "../../utils/request/thirdparty";
 import DictUtil from "../../utils/file/dictUtil";
 import TokenService from "../../utils/storage/tokenService";
 import { resolveStoredPlugin } from "../../utils/plugins/records";
@@ -269,7 +267,6 @@ export function handleFetchUserInfo() {
         await userRequest.refreshUserToken();
         resetReaderRequest();
         resetUserRequest();
-        resetThirdpartyRequest();
       }
     }
 
@@ -447,71 +444,6 @@ export function handleFetchPlugins() {
             ""
           );
           pluginList.push(sumPlugin);
-        }
-        const isAuthed = (await TokenService.getToken("is_authed")) === "yes";
-        if (ConfigService.getReaderConfig("isDisableAI") !== "yes") {
-          // 官方 AI 语音始终展示（不依赖登录），选择时再判断是否升级
-          let sortedVoiceList = [
-            ...KookitConfig.OfficialVoiceList.map((item) => {
-              return {
-                ...item,
-                label:
-                  i18n.t("Kokoro") +
-                  " - " +
-                  (KookitConfig.SelfHostedVoiceList.includes(item.name) &&
-                  isAuthed
-                    ? i18n.t("Limited free") + " - "
-                    : "") +
-                  item.displayName +
-                  " - " +
-                  item.language +
-                  " - " +
-                  (item.gender === "female"
-                    ? i18n.t("Female voice")
-                    : i18n.t("Male voice")),
-              };
-            }),
-            ...KookitConfig.AzureTTSVoiceList.map((item) => {
-              return {
-                ...item,
-                label:
-                  "Azure" +
-                  " - " +
-                  (KookitConfig.SelfHostedVoiceList.includes(item.name) &&
-                  isAuthed
-                    ? i18n.t("Limited free") + " - "
-                    : "") +
-                  item.displayName +
-                  " - " +
-                  langToName(item.locale) +
-                  " - " +
-                  (item.gender === "female"
-                    ? i18n.t("Female voice")
-                    : i18n.t("Male voice")),
-              };
-            }),
-          ];
-          let voicePlugin = new PluginModel(
-            "official-ai-voice-plugin",
-            "voice",
-            "Official AI Voice",
-            "speaker",
-            "1.0.0",
-            "",
-            {},
-            {},
-            sortedVoiceList.map((item: any) => {
-              return {
-                ...item,
-                plugin: "official-ai-voice-plugin",
-                config: {},
-                displayName: item.label,
-              };
-            }),
-            "",
-            ""
-          );
-          pluginList.push(voicePlugin);
         }
         TokenService.getToken("is_authed").then((value) => {
           let isAuthed = value === "yes";

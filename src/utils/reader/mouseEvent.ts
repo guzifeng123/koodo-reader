@@ -9,7 +9,6 @@ import {
   throttle,
 } from "../common";
 import Hammer from "hammerjs";
-import TTSUtil from "./ttsUtil";
 import {
   getShortcutConfig,
   isNextPageKey,
@@ -261,8 +260,6 @@ const handleShortcut = (
       handleExitFullScreen();
     } else {
       ConfigService.setReaderConfig("isFullscreen", "no");
-      window.speechSynthesis && window.speechSynthesis.cancel();
-      TTSUtil.pauseAudio();
       if (isElectron) {
         if (ConfigService.getReaderConfig("isOpenInMain") === "yes") {
           window.electronAPI.invoke("exit-tab", "ping");

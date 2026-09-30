@@ -234,14 +234,6 @@ class PopupMenu extends React.Component<PopupMenuProps, PopupMenuStates> {
         this.showMenu();
         this.props.handleOpenMenu(true);
         break;
-      case "speaker":
-        const msg = new SpeechSynthesisUtterance();
-        msg.text = text;
-        if (window.speechSynthesis && window.speechSynthesis.getVoices) {
-          msg.voice = window.speechSynthesis.getVoices()[0];
-          window.speechSynthesis.speak(msg);
-        }
-        break;
       default:
         this.showMenu();
         this.props.handleMenuMode("menu");

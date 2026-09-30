@@ -43,6 +43,5 @@ export interface HeaderState {
   width: number;
   isNewVersion: boolean;
   isHidePro: boolean;
-  isSync: boolean;
   notificationCount: number;
 }

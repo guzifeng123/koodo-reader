@@ -811,14 +811,6 @@ class ImportLocal extends React.Component<ImportLocalProps, ImportLocalState> {
     }));
   };
 
-  // Add method to handle cloud import
-  handleCloudImport = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering the Dropzone
-    this.setState({ isMoreOptionsVisible: false });
-
-    this.props.handleImportDialog(true);
-  };
-
   // Handle OPDS import
   handleOPDSImport = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the Dropzone
@@ -937,12 +929,6 @@ class ImportLocal extends React.Component<ImportLocalProps, ImportLocalState> {
           this.props.handleDrag(false);
           for (let item of acceptedFiles) {
             await this.getMd5WithBrowser(item);
-          }
-          if (
-            ConfigService.getReaderConfig("isDisableAutoSync") !== "yes" &&
-            ConfigService.getItem("defaultSyncOption")
-          ) {
-            await this.props.cloudSyncFunc();
           }
         }}
         accept={supportedFormatsAccept}
@@ -1063,14 +1049,6 @@ class ImportLocal extends React.Component<ImportLocalProps, ImportLocalState> {
                           this.setState({
                             isMoreOptionsVisible: false,
                           });
-                          if (
-                            ConfigService.getReaderConfig(
-                              "isDisableAutoSync"
-                            ) !== "yes" &&
-                            ConfigService.getItem("defaultSyncOption")
-                          ) {
-                            await this.props.cloudSyncFunc();
-                          }
                         }
                       }}
                     >
@@ -1110,25 +1088,9 @@ class ImportLocal extends React.Component<ImportLocalProps, ImportLocalState> {
                               await this.getMd5WithBrowser(item);
                             }
                             this.toggleMoreOptions();
-                            if (
-                              ConfigService.getReaderConfig(
-                                "isDisableAutoSync"
-                              ) !== "yes" &&
-                              ConfigService.getItem("defaultSyncOption")
-                            ) {
-                              await this.props.cloudSyncFunc();
-                            }
                           }}
                         ></input>
                       )}
-                    </div>
-                    <div
-                      className="more-option-item"
-                      onClick={this.handleCloudImport}
-                    >
-                      <span className="more-option-text">
-                        <Trans>From cloud storage</Trans>
-                      </span>
                     </div>
                     <div
                       className="more-option-item"
@@ -1205,13 +1167,6 @@ class ImportLocal extends React.Component<ImportLocalProps, ImportLocalState> {
                         error
                       );
                     }
-                  }
-                  if (
-                    ConfigService.getReaderConfig("isDisableAutoSync") !==
-                      "yes" &&
-                    ConfigService.getItem("defaultSyncOption")
-                  ) {
-                    await this.props.cloudSyncFunc();
                   }
                 }}
               ></div>

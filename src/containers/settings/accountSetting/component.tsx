@@ -7,7 +7,6 @@ import {
   formatTimestamp,
   getServerRegion,
   getWebsiteUrl,
-  handleAutoCloudSync,
   handleContextMenu,
   openInBrowser,
   reloadManager,
@@ -29,7 +28,6 @@ import {
 import { handleClearToken, handleExitApp } from "../../../utils/request/common";
 import copyTextToClipboard from "copy-text-to-clipboard";
 import { resetReaderRequest } from "../../../utils/request/reader";
-import { resetThirdpartyRequest } from "../../../utils/request/thirdparty";
 import TokenService from "../../../utils/storage/tokenService";
 declare var window: any;
 class AccountSetting extends React.Component<
@@ -93,8 +91,6 @@ class AccountSetting extends React.Component<
 
     this.props.handleFetchAuthed();
     this.props.handleLoginOptionList([]);
-    this.props.handleFetchDataSourceList();
-    this.props.handleFetchDefaultSyncOption();
     toast.success(this.props.t("Log out successful"));
   };
   handleAddLoginOption = (value: string) => {
@@ -222,18 +218,11 @@ class AccountSetting extends React.Component<
     if (res.code === 200) {
       this.props.handleFetchAuthed();
       this.props.handleFetchLoginOptionList();
-      let result = await handleAutoCloudSync();
-      if (result) {
-        this.props.cloudSyncFunc();
-      } else {
-        ConfigService.removeItem("defaultSyncOption");
-        ConfigService.removeItem("dataSourceList");
-      }
+      ConfigService.removeItem("defaultSyncOption");
+      ConfigService.removeItem("dataSourceList");
       toast.success(this.props.t("Login successful"), {
         id: "bind-login-option",
       });
-      this.props.handleFetchDataSourceList();
-      this.props.handleFetchDefaultSyncOption();
       this.props.handleFetchUserInfo();
       this.setState({ settingLogin: "" });
     } else {
@@ -749,7 +738,6 @@ class AccountSetting extends React.Component<
                     });
                     resetReaderRequest();
                     resetUserRequest();
-                    resetThirdpartyRequest();
                     await this.handleLogout();
                   }
                 }}
@@ -772,7 +760,6 @@ class AccountSetting extends React.Component<
                 });
                 resetReaderRequest();
                 resetUserRequest();
-                resetThirdpartyRequest();
                 toast.success(this.props.t("Setup successful"));
               }}
             >

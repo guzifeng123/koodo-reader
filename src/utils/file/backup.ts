@@ -6,12 +6,10 @@ import {
   CommonTool,
   ConfigService,
 } from "../../assets/lib/kookit-extra-browser.min";
-import { getCloudConfig } from "./common";
 import DatabaseService from "../storage/databaseService";
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
 import ConfigUtil from "./configUtil";
-import SyncService from "../storage/syncService";
 import BackgroundUtil from "./backgroundUtil";
 import FontUtil from "./fontUtil";
 import toast from "react-hot-toast";
@@ -23,25 +21,15 @@ export type BackupResult = "success" | "failed" | "cancel";
 
 export const backup = async (service: string): Promise<BackupResult> => {
   await checkMissingBook();
-  let fileName = "data.zip";
-  if (service === "local") {
-    let now = new Date();
-    fileName = `KoodoReader-Backup-${now.getFullYear()}-${
-      now.getMonth() + 1
-    }-${now.getDate()}-${Date.now()}.zip`;
-  }
+  let now = new Date();
+  let fileName = `KoodoReader-Backup-${now.getFullYear()}-${
+    now.getMonth() + 1
+  }-${now.getDate()}-${Date.now()}.zip`;
   if (isElectron) {
     const ipcRenderer = window.electronAPI;
-    let targetPath = "";
-    if (service === "local") {
-      const backupPath = await ipcRenderer.invoke("select-path");
-      if (!backupPath) {
-        return "cancel";
-      }
-      targetPath = backupPath;
-    } else {
-      const path = window.electronAPI.path;
-      targetPath = path.join(getStorageLocation(), "backup");
+    const backupPath = await ipcRenderer.invoke("select-path");
+    if (!backupPath) {
+      return "cancel";
     }
     toast.loading(i18n.t("Backup...") + " (0%)", {
       id: "backup",
@@ -49,7 +37,7 @@ export const backup = async (service: string): Promise<BackupResult> => {
     // 让 UI 有时间渲染 toast
     await new Promise((resolve) => setTimeout(resolve, 100));
     const backupResult = await backupFromPath(
-      targetPath,
+      backupPath,
       fileName,
       (percent) => {
         toast.loading(i18n.t("Backup...") + ` (${percent}%)`, {
@@ -60,34 +48,14 @@ export const backup = async (service: string): Promise<BackupResult> => {
     if (!backupResult) {
       return "failed";
     }
-    if (service === "local") {
-      return "success";
-    } else {
-      let tokenConfig = await getCloudConfig(service);
-
-      return (await ipcRenderer.invoke("cloud-upload", {
-        ...tokenConfig,
-        fileName: "data.zip",
-        service: service,
-        type: "backup",
-        storagePath: getStorageLocation(),
-      }))
-        ? "success"
-        : "failed";
-    }
+    return "success";
   } else {
     let blob: Blob | boolean = await backupFromStorage();
     if (!blob) {
       return "failed";
     }
-    if (service === "local") {
-      saveAs(blob as Blob, fileName);
-      return "success";
-    } else {
-      let syncUtil = await SyncService.getSyncUtil();
-      let result = await syncUtil.uploadFile(fileName, "backup", blob as Blob);
-      return result ? "success" : "failed";
-    }
+    saveAs(blob as Blob, fileName);
+    return "success";
   }
 };
 export const generateSnapshot = async () => {

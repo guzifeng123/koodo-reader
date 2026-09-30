@@ -6,10 +6,8 @@ import { withRouter } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import { loginList } from "../../constants/loginList";
 import {
-  generateSyncRecord,
   getServerRegion,
   getWebsiteUrl,
-  handleAutoCloudSync,
   handleContextMenu,
   openInBrowser,
   removeSearchParams,
@@ -21,7 +19,6 @@ import {
   LoginHelper,
 } from "../../assets/lib/kookit-extra-browser.min";
 import { isElectron } from "react-device-detect";
-import { driveList } from "../../constants/driveList";
 import {
   getUserRequest,
   loginRegister,
@@ -30,7 +27,6 @@ import {
 import SettingDialog from "../../components/dialogs/settingDialog";
 import LoadingDialog from "../../components/dialogs/loadingDialog";
 import { resetReaderRequest } from "../../utils/request/reader";
-import { resetThirdpartyRequest } from "../../utils/request/thirdparty";
 
 class Login extends React.Component<LoginProps, LoginState> {
   private lastLoginClickTime: number = 0;
@@ -96,29 +92,14 @@ class Login extends React.Component<LoginProps, LoginState> {
     let res = await loginRegister(service, code);
     if (res.code === 200) {
       this.props.handleLoadingDialog(false);
-      let result = await handleAutoCloudSync();
-      if (result) {
-        this.props.cloudSyncFunc();
-      } else {
-        ConfigService.removeItem("defaultSyncOption");
-        ConfigService.removeItem("dataSourceList");
-      }
+      ConfigService.removeItem("defaultSyncOption");
+      ConfigService.removeItem("dataSourceList");
 
-      this.props.handleFetchDataSourceList();
-      this.props.handleFetchDefaultSyncOption();
       removeSearchParams();
       this.props.handleFetchAuthed();
       await this.props.handleFetchUserInfo();
       toast.success(this.props.t("Login successful"));
-      this.setState({ currentStep: result ? 4 : 3 });
-      if (ConfigService.getReaderConfig("isProUpgraded") !== "yes") {
-        try {
-          ConfigService.setReaderConfig("isProUpgraded", "yes");
-          await generateSyncRecord();
-        } catch (error) {
-          console.error(error);
-        }
-      }
+      this.setState({ currentStep: 3 });
     } else {
       this.props.handleLoadingDialog(false);
       if (service === "email") {
@@ -132,7 +113,6 @@ class Login extends React.Component<LoginProps, LoginState> {
     this.setState({ serverRegion: region });
     resetReaderRequest();
     resetUserRequest();
-    resetThirdpartyRequest();
   };
 
   render() {
@@ -483,88 +463,7 @@ class Login extends React.Component<LoginProps, LoginState> {
                 className="login-title"
                 style={{ marginTop: "80px", marginBottom: "10%" }}
               >
-                {this.props.t(
-                  "Add a data source for data synchronization and backup"
-                )}
-              </div>
-              <div className="login-sync-container">
-                {driveList
-                  .filter((item) => {
-                    if (!isElectron) {
-                      return item.support.includes("browser");
-                    } else {
-                      return true;
-                    }
-                  })
-                  .filter((item) => {
-                    if (isElectron && window.electronAPI?.runtime?.platform !== "darwin") {
-                      return item.value !== "icloud";
-                    }
-                    return true;
-                  })
-                  .map((item) => {
-                    return (
-                      <div
-                        className="login-sync-box"
-                        key={item.value}
-                        style={{}}
-                        onClick={() => {
-                          this.props.handleSetting(true);
-                          this.props.handleSettingMode("sync");
-                          this.props.handleSettingDrive(item.value);
-                        }}
-                      >
-                        <div className="login-sync-title">
-                          {this.props.t(item.label)}
-                        </div>
-                        <div className="login-sync-icon-container">
-                          <span className={"icon-add login-sync-icon"}></span>
-                        </div>
-                        {ConfigService.getReaderConfig("lang") &&
-                          ConfigService.getReaderConfig("lang").startsWith(
-                            "zh"
-                          ) &&
-                          item.value === "webdav" &&
-                          isElectron && (
-                            <div className="login-sync-text">
-                              {this.props.t("Recommended (use with Nutstore)")}
-                            </div>
-                          )}
-                        {ConfigService.getReaderConfig("lang") &&
-                          ConfigService.getReaderConfig("lang").startsWith(
-                            "zh"
-                          ) &&
-                          item.value === "microsoft" && (
-                            <div className="login-sync-text">
-                              {this.props.t("Access may be unstable in China")}
-                            </div>
-                          )}
-                        {ConfigService.getReaderConfig("lang") &&
-                          ConfigService.getReaderConfig("lang").startsWith(
-                            "zh"
-                          ) &&
-                          item.value === "yiyiwu" && (
-                            <div className="login-sync-text">
-                              {this.props.t("Only recommended for VIP users")}
-                            </div>
-                          )}
-                        <div className="login-sync-subtitle">
-                          <div>
-                            {item.support.map((support) => {
-                              return (
-                                <span
-                                  key={support}
-                                  className={
-                                    "icon-" + support + " login-sync-support"
-                                  }
-                                ></span>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                {this.props.t("You have successfully logged in")}
               </div>
               <div
                 className="login-next-button"

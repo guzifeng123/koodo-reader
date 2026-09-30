@@ -18,7 +18,6 @@ import ConvertDialog from "../../components/dialogs/convertDialog";
 import PdfCropDialog from "../../components/dialogs/pdfCropDialog";
 import { isElectron } from "react-device-detect";
 import SettingDialog from "../../components/dialogs/settingDialog";
-import SpeechDialog from "../../components/dialogs/speechDialog";
 import AnnotationDialog from "../../components/dialogs/annotationDialog";
 import PopupOptionDialog from "../../components/dialogs/popupOptionDialog";
 import {
@@ -422,22 +421,6 @@ class Reader extends React.Component<ReaderProps, ReaderState> {
             style={{ position: "static" }}
           >
             <span className="icon-dropdown next-chapter-single"></span>
-          </div>
-          <div
-            className="next-chapter-single-container"
-            onClick={async () => {
-              this.props.handleSpeechDialog(!this.props.isSpeechOpen);
-            }}
-            style={{ position: "static", transform: "rotate(0deg)" }}
-          >
-            <span
-              style={
-                this.props.isSpeechOpen
-                  ? { fontWeight: "bold", marginTop: "4px" }
-                  : {}
-              }
-              className={`icon-${this.props.isSpeechOpen ? "close" : "earphone"} next-chapter-single`}
-            ></span>
           </div>
           {ConfigService.getReaderConfig("isDisableAI") !== "yes" && (
             <div
@@ -880,19 +863,6 @@ class Reader extends React.Component<ReaderProps, ReaderState> {
             <div className="drag-background"></div>
           </>
         )}
-        {
-          <div
-            style={
-              this.props.isSpeechOpen
-                ? {}
-                : {
-                    display: "none",
-                  }
-            }
-          >
-            <SpeechDialog />
-          </div>
-        }
         {this.props.isAnnotationOpen && <AnnotationDialog />}
       </div>
     );

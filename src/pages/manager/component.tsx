@@ -6,7 +6,6 @@ import EditDialog from "../../components/dialogs/editDialog";
 import AddDialog from "../../components/dialogs/addDialog";
 import SortDialog from "../../components/dialogs/sortBookDialog";
 import LocalFileDialog from "../../components/dialogs/localFileDialog";
-import ImportDialog from "../../components/dialogs/importDialog";
 import OPDSDialog from "../../components/dialogs/opdsDialog";
 import AutoImportDialog from "../../components/dialogs/autoImportDialog";
 import { ManagerProps, ManagerState } from "./interface";
@@ -306,7 +305,6 @@ class Manager extends React.Component<ManagerProps, ManagerState> {
         {this.props.isShowLoading && <LoadingDialog />}
         {this.props.isSortDisplay && <SortDialog />}
         {this.props.isOpenLocalFileDialog && <LocalFileDialog />}
-        {this.props.isOpenImportDialog && <ImportDialog />}
         {this.props.isOpenOPDSDialog && <OPDSDialog />}
         {this.props.isOpenAutoImportDialog && <AutoImportDialog />}
         {this.props.isOpenSortShelfDialog && <SortShelfDialog />}

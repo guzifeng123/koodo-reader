@@ -7,7 +7,6 @@ import { OperationPanelProps, OperationPanelState } from "./interface";
 import { ConfigService } from "../../../assets/lib/kookit-extra-browser.min";
 import { withRouter } from "react-router-dom";
 import toast from "react-hot-toast";
-import TTSUtil from "../../../utils/reader/ttsUtil";
 import { isElectron } from "react-device-detect";
 import { handleExitFullScreen, handleFullScreen } from "../../../utils/common";
 import DatabaseService from "../../../utils/storage/databaseService";
@@ -90,8 +89,6 @@ class OperationPanel extends React.Component<
     ConfigService.setReaderConfig("isFullscreen", "no");
     this.props.handleReadingState(false);
     this.props.handleSearch(false);
-    window.speechSynthesis && window.speechSynthesis.cancel();
-    TTSUtil.pauseAudio();
     handleExitFullScreen();
     if (this.props.htmlBook) {
       this.props.handleHtmlBook(null);
