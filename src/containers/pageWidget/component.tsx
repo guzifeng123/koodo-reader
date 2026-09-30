@@ -205,8 +205,7 @@ class PageWidget extends React.Component<PageWidgetProps, PageWidgetState> {
         !ConfigService.getAllListConfig("fullTranslationBooks").includes(
           this.props.currentBook.key
         ) ||
-        ConfigService.getReaderConfig("fullTranslationMode") === "no" ||
-        !this.props.isAuthed
+        ConfigService.getReaderConfig("fullTranslationMode") === "no"
       ) {
         return;
       }
@@ -264,8 +263,7 @@ class PageWidget extends React.Component<PageWidgetProps, PageWidgetState> {
       if (
         !ConfigService.getAllListConfig("wordDefinitionBooks").includes(
           this.props.currentBook.key
-        ) ||
-        !this.props.isAuthed
+        )
       ) {
         return;
       }

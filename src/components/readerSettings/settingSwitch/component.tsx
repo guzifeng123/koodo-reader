@@ -321,22 +321,12 @@ class SettingSwitch extends React.Component<
         <div className="single-control-switch-container" key="isWordDefinition">
           <span className="single-control-switch-title">
             <Trans>Enable word definitions</Trans>
-            <span style={{ fontSize: "13px", color: "#f16464" }}> (Pro)</span>
           </span>
           <span
             className="single-control-switch"
             onClick={async () => {
               const next = !this.state.isWordDefinition;
               if (next) {
-                if (!this.props.isAuthed) {
-                  toast(
-                    this.props.t("Please upgrade to Pro to use this feature")
-                  );
-                  this.props.handleSetting(true);
-                  this.props.handleSettingMode("account");
-                  ConfigService.setReaderConfig("fullTranslationMode", "no");
-                  return;
-                }
                 if (this.state.isBionic) {
                   toast.error(
                     this.props.t(

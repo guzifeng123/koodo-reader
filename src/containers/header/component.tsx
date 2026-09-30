@@ -772,21 +772,9 @@ class Header extends React.Component<HeaderProps, HeaderState> {
                 let userInfo = await this.props.handleFetchUserInfo();
                 await this.handleCloudSync(userInfo);
               } else {
-                if (
-                  ConfigService.getReaderConfig("isEnableKoReaderSync") !==
-                  "yes"
-                ) {
-                  toast(
-                    this.props.t("Please upgrade to Pro to use this feature")
-                  );
-                  this.props.handleSetting(true);
-                  this.props.handleSettingMode("account");
-                  this.setState({ isSync: false });
-                } else {
-                  this.setState({ isSync: true });
-                  await this.handleKOReaderSync();
-                  this.setState({ isSync: false });
-                }
+                this.setState({ isSync: true });
+                await this.handleKOReaderSync();
+                this.setState({ isSync: false });
               }
             }}
             style={{ marginTop: "2px" }}
@@ -807,37 +795,6 @@ class Header extends React.Component<HeaderProps, HeaderState> {
           </div>
         </div>
 
-        {!this.props.isAuthed &&
-        !this.state.isHidePro &&
-        window.location.hostname !== "web.koodoreader.cn" ? (
-          <div className="header-report-container">
-            <span
-              style={{ textDecoration: "underline" }}
-              onClick={() => {
-                if (
-                  window.location.hostname !== "web.koodoreader.com" &&
-                  !isElectron
-                ) {
-                  this.props.handleSetting(true);
-                  this.props.handleSettingMode("account");
-                  return;
-                }
-                this.props.history.push("/login");
-              }}
-            >
-              <Trans>Pro version</Trans>
-              <span> </span>
-            </span>
-
-            <span
-              className="icon-close icon-pro-close"
-              onClick={() => {
-                ConfigService.setReaderConfig("isHidePro", "yes");
-                this.setState({ isHidePro: true });
-              }}
-            ></span>
-          </div>
-        ) : null}
         {this.props.isAuthed &&
         this.props.userInfo &&
         ((this.props.userInfo.type === "pro" &&

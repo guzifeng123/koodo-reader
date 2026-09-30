@@ -271,7 +271,6 @@ class ImportLocal extends React.Component<ImportLocalProps, ImportLocalState> {
   analyzeBookMetadata = async (book: BookModel, bookName: string) => {
     if (
       ConfigService.getReaderConfig("isAIAnalyzeTitle") !== "yes" ||
-      !this.props.isAuthed ||
       book.name !== bookName
     ) {
       return;

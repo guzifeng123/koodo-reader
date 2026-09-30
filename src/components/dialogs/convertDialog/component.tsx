@@ -144,17 +144,6 @@ class ConvertDialog extends React.Component<
                 className="lang-setting-dropdown"
                 value={getDefaultOcrEngine(this.props.currentBook)}
                 onChange={(event) => {
-                  if (
-                    event.target.value === "official-ai-ocr" &&
-                    !this.props.isAuthed
-                  ) {
-                    toast(
-                      this.props.t("Please upgrade to Pro to use this feature")
-                    );
-                    this.props.handleSetting(true);
-                    this.props.handleSettingMode("account");
-                    return;
-                  }
                   ConfigService.setReaderConfig(
                     this.props.currentBook.description.indexOf("scanned") > -1
                       ? "scannedOcrEngine"
