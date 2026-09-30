@@ -4,8 +4,6 @@ import { withTranslation } from "react-i18next";
 import {
   handleSetting,
   handleFetchPlugins,
-  handleFetchDataSourceList,
-  handleFetchDefaultSyncOption,
   handleSettingMode,
 } from "../../../store/actions";
 import { stateType } from "../../../store";
@@ -19,8 +17,6 @@ const mapStateToProps = (state: stateType) => {
 const actionCreator = {
   handleSetting,
   handleFetchPlugins,
-  handleFetchDataSourceList,
-  handleFetchDefaultSyncOption,
   handleSettingMode,
 };
 export default connect(

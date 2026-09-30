@@ -172,27 +172,6 @@ class PopupOption extends React.Component<PopupOptionProps> {
     this.props.handleOpenMenu(false);
   };
 
-  handleSpeak = () => {
-    var msg = new SpeechSynthesisUtterance();
-    msg.text = getSelection(this.props.currentBook.format);
-    if (window.speechSynthesis && window.speechSynthesis.getVoices) {
-      msg.voice = window.speechSynthesis.getVoices()[0];
-      window.speechSynthesis.speak(msg);
-    }
-  };
-
-  handleReadFromHere = () => {
-    const text =
-      getSelectionSentence(this.props.currentBook.format) ||
-      getSelection(this.props.currentBook.format);
-    if (!text) return;
-
-    this.props.handleSpeechStartText(text);
-    this.props.handleSpeechAutoStart(true);
-    this.props.handleSpeechDialog(true);
-    this.props.handleOpenMenu(false);
-  };
-
   handleAssistant = () => {
     const text = getSelection(this.props.currentBook.format);
     if (!text) return;
@@ -229,12 +208,6 @@ class PopupOption extends React.Component<PopupOptionProps> {
         break;
       case "browser":
         this.handleSearchInternet();
-        break;
-      case "speaker":
-        this.handleSpeak();
-        break;
-      case "speech-start":
-        this.handleReadFromHere();
         break;
       case "assistant":
         this.handleAssistant();

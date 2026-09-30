@@ -9,7 +9,6 @@ import {
 import { getServerRegion, reloadManager } from "../common";
 import { resetReaderRequest } from "./reader";
 import { resetUserRequest } from "./user";
-import { resetThirdpartyRequest } from "./thirdparty";
 import { isElectron } from "react-device-detect";
 import TokenService from "../storage/tokenService";
 const PUBLIC_URL = "https://api.koodoreader.com";
@@ -64,7 +63,6 @@ export const handleClearToken = async () => {
   ConfigService.setReaderConfig("aiService", "");
   resetReaderRequest();
   resetUserRequest();
-  resetThirdpartyRequest();
 };
 
 export const aiRequest = async (

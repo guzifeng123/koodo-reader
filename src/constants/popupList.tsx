@@ -12,8 +12,6 @@ export type PopupOptionKey =
   | "search-book"
   | "dict"
   | "browser"
-  | "speaker"
-  | "speech-start"
   | "assistant";
 
 export interface PopupOptionItem {
@@ -72,20 +70,6 @@ export const popupList: PopupOptionItem[] = [
     name: "browser",
     title: "Search on the Internet",
     icon: "browser",
-    defaultEnabled: true,
-  },
-  {
-    key: "speaker",
-    name: "speaker",
-    title: "Speak the text",
-    icon: "speaker",
-    defaultEnabled: true,
-  },
-  {
-    key: "speech-start",
-    name: "speech-start",
-    title: "Read from here",
-    icon: "earphone",
     defaultEnabled: true,
   },
   {

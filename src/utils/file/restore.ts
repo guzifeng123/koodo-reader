@@ -1,5 +1,5 @@
-import { generateSyncRecord, getStorageLocation } from "../common";
-import { getCloudConfig, upgradeConfig, upgradeStorage } from "./common";
+import { getStorageLocation } from "../common";
+import { upgradeConfig, upgradeStorage } from "./common";
 import localforage from "localforage";
 import SqlUtil from "./sqlUtil";
 import DatabaseService from "../storage/databaseService";
@@ -232,50 +232,19 @@ export const restoreFromBrowser = async (): Promise<
 export const restore = async (
   service: string
 ): Promise<"success" | "failed" | "cancel"> => {
-  if (service === "local" && !isElectron) {
-    let restoreRes = await restoreFromBrowser();
-    if (restoreRes !== "cancel") {
-      await generateSyncRecord();
-    }
-    return restoreRes;
+  if (!isElectron) {
+    return await restoreFromBrowser();
   }
   const ipcRenderer = window.electronAPI;
-  if (service === "local") {
-    let filePath = await ipcRenderer.invoke("select-zip-file", "ping");
-    if (!filePath) return "cancel";
-    toast.loading(i18n.t("Restoring..."), {
-      id: "backup",
-    });
-    // 让 UI 有时间渲染 toast
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    let restoreRes = await restoreFromfilePath(filePath);
-    await generateSyncRecord();
-    return restoreRes ? "success" : "failed";
-  } else {
-    toast.loading(i18n.t("Restoring..."), {
-      id: "backup",
-    });
-    let tokenConfig = await getCloudConfig(service);
-    let result = await ipcRenderer.invoke("cloud-download", {
-      ...tokenConfig,
-      fileName: "data.zip",
-      service: service,
-      type: "backup",
-      storagePath: getStorageLocation(),
-    });
-    if (!result) {
-      console.error("no backup file");
-      return "failed";
-    }
-    const path = window.electronAPI.path;
-    let filePath = path.join(getStorageLocation(), "backup", "data.zip");
-
-    // 让 UI 有时间渲染 toast
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    let restoreRes = await restoreFromfilePath(filePath);
-    await generateSyncRecord();
-    return restoreRes ? "success" : "failed";
-  }
+  let filePath = await ipcRenderer.invoke("select-zip-file", "ping");
+  if (!filePath) return "cancel";
+  toast.loading(i18n.t("Restoring..."), {
+    id: "backup",
+  });
+  // 让 UI 有时间渲染 toast
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  let restoreRes = await restoreFromfilePath(filePath);
+  return restoreRes ? "success" : "failed";
 };
 export const restoreFromSnapshot = async (fileName: string) => {
   try {
@@ -318,7 +287,6 @@ export const restoreFromSnapshot = async (fileName: string) => {
         console.error("restore config error:", error);
       }
     }
-    await generateSyncRecord();
     return true;
   } catch (error) {
     console.error("restore snapshot error:", error);
