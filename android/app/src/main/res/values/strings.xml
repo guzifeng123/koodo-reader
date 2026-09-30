@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Koodo Reader</string>
+    <string name="title_activity_main">Koodo Reader</string>
+    <string name="package_name">xyz.koodo.local</string>
+    <string name="custom_url_scheme">xyz.koodo.local</string>
+</resources>
